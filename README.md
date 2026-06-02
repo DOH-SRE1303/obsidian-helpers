@@ -1,8 +1,37 @@
 # vault-tools
 
-Small, expandable Typer CLI tools for auditing and indexing an Obsidian vault.
+Small, expandable Typer CLI tools for auditing and indexing Obsidian vaults.
 
-This is intentionally boring infrastructure: scan the vault, export reports, and create a reliable base for future migration/indexing tools.
+This is intentionally boring infrastructure: scan vaults, export reports, and create a reliable base for future migration/indexing tools.
+
+## Suggested layout
+
+Keep the CLI repo beside your vaults:
+
+```text
+Obsidian/
+├── vault-tools/          # this repo
+├── vault-old/            # frozen snapshot / evidence archive
+├── vault-new/            # curated, version-controlled vault
+└── repo-index-output/    # optional later
+```
+
+Then store reusable vault profiles in `vault-tools.yml`:
+
+```yaml
+default_vault: new
+vaults:
+  old:
+    path: ../vault-old
+    role: source
+    description: Read-only legacy vault snapshot used as migration evidence.
+  new:
+    path: ../vault-new
+    role: target
+    description: Version-controlled working vault.
+```
+
+`vault-tools.yml` is intentionally gitignored by default because local paths are usually machine-specific. Commit a `vault-tools.example.yml` if you want a shareable template.
 
 ## Install locally
 
@@ -20,19 +49,46 @@ python -m venv .venv
 python -m pip install -e .
 ```
 
-## Commands
+## Configure vault profiles
 
 ```bash
-vt --help
+vt vault init --empty
+vt vault add old ../vault-old --role source --description "Frozen legacy vault"
+vt vault add new ../vault-new --role target --description "Version-controlled working vault" --default
+vt vault list
+vt vault show new
+vt vault default old
+```
+
+You can also pass `--config path/to/vault-tools.yml`, or set `VAULT_TOOLS_CONFIG`.
+
+## Commands
+
+Use a direct vault path:
+
+```bash
 vt stats "C:/path/to/vault"
 vt info "C:/path/to/vault" --out reports/vault-info.md --max-depth 2
-vt info "C:/path/to/vault" --format json --out exports/vault-info.json
-vt tree "C:/path/to/vault" --max-depth 3 --out reports/tree.md
-vt manifest "C:/path/to/vault" --out exports/vault-manifest.json
-vt audit no-tags "C:/path/to/vault" --out reports/no-tags.md
-vt audit no-tags "C:/path/to/vault" --under "Meetings" --format csv --out reports/no-tags-meetings.csv
-vt audit broken-links "C:/path/to/vault" --out reports/broken-links.md
-vt audit orphan-attachments "C:/path/to/vault" --out reports/orphan-attachments.md
+```
+
+Use the default configured vault:
+
+```bash
+vt stats
+vt info --out reports/vault-info.md --max-depth 2
+vt manifest --out exports/vault-manifest.json
+vt audit no-tags --out reports/no-tags.md
+vt audit broken-links --out reports/broken-links.md
+vt audit orphan-attachments --out reports/orphan-attachments.md
+```
+
+Use a specific profile:
+
+```bash
+vt stats --profile old
+vt info --profile new --format json --out exports/new-vault-info.json
+vt tree --profile old --max-depth 3 --out reports/old-tree.md
+vt audit no-tags --profile old --under "Meetings" --format csv --out reports/old-no-tags-meetings.csv
 ```
 
 ## Current audits
@@ -47,9 +103,12 @@ vt audit orphan-attachments "C:/path/to/vault" --out reports/orphan-attachments.
 - Frontmatter field counts
 - Tag counts
 - Optional `.obsidian` plugin/template metadata
+- Named vault profiles via `vault-tools.yml`
 
 ## Planned next audits
 
+- Compare two vault profiles, such as `old` vs `new`
+- Migration dry-runs from source vault to target vault
 - Meeting-like notes missing `projects` metadata
 - Daily-note-derived meeting notes
 - Notes with people but no project
@@ -61,6 +120,7 @@ vt audit orphan-attachments "C:/path/to/vault" --out reports/orphan-attachments.
 - Notes with TODO/action items
 - Notes with decisions but no decision note
 - Stale generated maps
+- Repo index command for GitHub repositories
 
 ## Design notes
 
@@ -68,3 +128,4 @@ vt audit orphan-attachments "C:/path/to/vault" --out reports/orphan-attachments.
 - Generate reports/maps into a new version-controlled vault or separate repo folder.
 - Prefer repeatable exports over manual cleanup.
 - Treat GitHub repositories as another source system, not ordinary vault folders.
+- Use named profiles so future commands can compare, migrate, or synthesize across vaults without hardcoded paths.

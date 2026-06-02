@@ -1,0 +1,10 @@
+default_vault: new
+vaults:
+  old:
+    path: ../vault-old
+    role: source
+    description: Read-only legacy vault snapshot used as migration evidence.
+  new:
+    path: ../vault-new
+    role: target
+    description: Version-controlled working vault.

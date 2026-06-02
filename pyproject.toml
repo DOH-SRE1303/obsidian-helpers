@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vault-tools"
+version = "0.1.0"
+description = "Small CLI tools for auditing and indexing an Obsidian vault."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "typer>=0.12",
+  "rich>=13.0",
+  "PyYAML>=6.0",
+]
+
+[project.scripts]
+vault-tools = "vault_tools.cli:app"
+vt = "vault_tools.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

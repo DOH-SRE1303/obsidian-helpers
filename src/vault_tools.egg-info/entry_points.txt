@@ -1,0 +1,3 @@
+[console_scripts]
+vault-tools = vault_tools.cli:app
+vt = vault_tools.cli:app

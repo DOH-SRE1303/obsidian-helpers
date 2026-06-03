@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 import re
 from collections import Counter
@@ -10,6 +9,8 @@ from pathlib import Path
 from typing import Any, Iterable
 
 import yaml
+
+from vault_tools.extensions import enabled_plugins, read_json
 
 CODE_FENCE_RE = re.compile(r"```.*?```", re.S)
 INLINE_CODE_RE = re.compile(r"`[^`]*`")
@@ -94,31 +95,6 @@ def resolve_vault(path: Path) -> Path:
     if not path.exists() or not path.is_dir():
         raise FileNotFoundError(f"Vault path not found or not a directory: {path}")
     return path
-
-
-def read_json(path: Path) -> Any:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return None
-
-
-def enabled_plugins(obsidian_dir: Path) -> tuple[list[str], list[str]]:
-    core_raw = read_json(obsidian_dir / "core-plugins.json")
-    community_raw = read_json(obsidian_dir / "community-plugins.json")
-
-    core: list[str] = []
-    community: list[str] = []
-
-    if isinstance(core_raw, list):
-        core = [str(x) for x in core_raw]
-    elif isinstance(core_raw, dict):
-        core = [str(k) for k, v in core_raw.items() if v]
-
-    if isinstance(community_raw, list):
-        community = [str(x) for x in community_raw]
-
-    return sorted(core), sorted(community)
 
 
 def detect_templates_folder(vault: Path) -> str | None:

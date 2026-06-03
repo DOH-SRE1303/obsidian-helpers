@@ -1,10 +1,21 @@
-default_vault: new
+current_vault: new
 vaults:
   old:
     path: ../vault-old
     role: source
+    nicknames:
+      - legacy
     description: Read-only legacy vault snapshot used as migration evidence.
   new:
     path: ../vault-new
     role: target
+    name: Curated Vault
+    nicknames:
+      - main
     description: Version-controlled working vault.
+    required_extensions:
+      core:
+        - templates
+      community:
+        - dataview
+        - templater-obsidian

@@ -139,10 +139,14 @@ Use the current configured vault:
 ```bash
 vt stats
 vt info --out reports/vault-info.md --max-depth 2
-vt manifest --out exports/vault-manifest.json
-vt audit no-tags --out reports/no-tags.md
-vt audit broken-links --out reports/broken-links.md
-vt audit orphan-attachments --out reports/orphan-attachments.md
+vt manifest build --out exports/scans/new/latest
+vt audit tags --untagged --sus --used-once
+vt audit attachment --locations --sprawl --duplicates
+vt audit folders --drift --duplicates
+vt audit no-tags --from-manifest exports/scans/new/latest --out reports/no-tags.md
+vt audit broken-links --from-manifest exports/scans/new/latest --out reports/broken-links.md
+vt audit orphan-attachments --from-manifest exports/scans/new/latest --out reports/orphan-attachments.md
+vt audit suspicious-tags --from-manifest exports/scans/new/latest --out reports/suspicious-tags.md
 ```
 
 Use a specific profile key or nickname:
@@ -151,8 +155,37 @@ Use a specific profile key or nickname:
 vt stats --profile old
 vt info --profile main --format json --out exports/new-vault-info.json
 vt tree --profile old --max-depth 3 --out reports/old-tree.md
-vt audit no-tags --profile old --under "Meetings" --format csv --out reports/old-no-tags-meetings.csv
+vt audit tags --profile old --untagged --used-once
+vt audit attachment --profile old --locations --duplicates
+vt audit folders --profile old --drift --duplicates
+vt manifest build --profile old --out exports/scans/old/latest
+vt audit no-tags --profile old --from-manifest exports/scans/old/latest --under "Meetings" --format csv --out reports/old-no-tags-meetings.csv
 ```
+
+## Manifests as the reusable data layer
+
+Build a manifest directory when you want reproducible reports and audits without rescanning the vault for every command:
+
+```bash
+vt manifest build --profile old --out exports/scans/old/latest
+vt info --profile old --from-manifest exports/scans/old/latest --out reports/vault-info.md
+vt audit no-tags --profile old --from-manifest exports/scans/old/latest --out reports/audits/no-tags.md
+vt audit broken-links --profile old --from-manifest exports/scans/old/latest --out reports/audits/broken-links.md
+vt audit orphan-attachments --profile old --from-manifest exports/scans/old/latest --out reports/audits/orphan-attachments.md
+vt audit suspicious-tags --profile old --from-manifest exports/scans/old/latest --out reports/audits/suspicious-tags.md
+```
+
+`vt manifest build` writes these generated JSON files, each including scan metadata such as `scan_id`, `vault_profile`, `vault_path`, `scanned_at`, `relative_path`, `size_bytes`, `modified_time`, and `content_hash` where applicable:
+
+- `vault_manifest.json` — one row per file in the vault.
+- `notes_manifest.json` — one row per Markdown note.
+- `links_manifest.json` — one row per wikilink, Markdown link, or embedded file reference.
+- `tags_manifest.json` — one row per note/tag relationship.
+- `frontmatter_manifest.json` — one row per note/frontmatter-field relationship.
+- `attachments_manifest.json` — one row per attachment file.
+- `classifications.json` — placeholder review rows for future classification output.
+
+Generated manifests, reports, audits, queues, classifications, and migration draft plans should be regenerated when source inputs change. Human-authored review decisions, taxonomy files, mapping rules, and approved migration plans should be preserved separately.
 
 ## Extension awareness
 
@@ -188,7 +221,7 @@ vc models
 
 - Vault stats
 - Folder tree export
-- Full JSON manifest
+- Reusable JSON manifest set
 - Notes without tags
 - Broken wikilinks
 - Orphan attachments

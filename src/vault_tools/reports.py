@@ -52,6 +52,25 @@ def markdown_table(rows: list[dict[str, Any]], columns: list[str] | None = None)
     return "\n".join([header, separator, *body]) + "\n"
 
 
+
+def folder_tree_from_paths(vault_name: str, file_paths: Iterable[str], max_depth: int) -> str:
+    lines = [f"- {vault_name}/"]
+    seen: set[str] = set()
+    for file_path in sorted(file_paths):
+        parts = Path(file_path).parts
+        if not parts:
+            continue
+        for depth, part in enumerate(parts, start=1):
+            if depth > max_depth + 1:
+                break
+            key = "/".join(parts[:depth])
+            if key in seen:
+                continue
+            seen.add(key)
+            suffix = "/" if depth < len(parts) else ""
+            lines.append(f"{'  ' * depth}- {part}{suffix}")
+    return "\n".join(lines)
+
 def render_info_markdown(scan: VaultScan, vault_path: Path, max_depth: int, include_obsidian: bool) -> str:
     tag_counts = Counter(tag for note in scan.notes for tag in note.tags)
     frontmatter_counts = Counter(key for note in scan.notes for key in note.frontmatter_keys)
@@ -66,7 +85,10 @@ def render_info_markdown(scan: VaultScan, vault_path: Path, max_depth: int, incl
     lines.append(f"- Notes without tags: {sum(1 for note in scan.notes if not note.tags)}")
     lines.append("\n## Folder tree\n")
     lines.append("```text")
-    lines.append(folder_tree(vault_path, max_depth=max_depth, include_obsidian=include_obsidian))
+    if vault_path.exists():
+        lines.append(folder_tree(vault_path, max_depth=max_depth, include_obsidian=include_obsidian))
+    else:
+        lines.append(folder_tree_from_paths(Path(scan.vault).name, scan.file_paths, max_depth=max_depth))
     lines.append("```")
 
     lines.append("\n## File types\n")
